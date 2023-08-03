@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('../partials/head'); %>
+</head>
+<body class="container">
+
+<header>
+  <%- include('../partials/header'); %>
+  <!-- <link href="/articles.css" rel="stylesheet" type="text/css"> -->
+</header>
+
+<script type="text/javascript">
+
+
+	function changeArticle(value){
+		let base_url = "/articles/"+value;
+		window.location.href= base_url
+	}
+
+	async function fetchGeneral(primaryKeys, method, data={}){
+		//console.log(id, method);
+		category = window.location.pathname.split("/").pop();
+
+		let url = "/articles/"+category+"/"+primaryKeys;
+
+		switch(method){
+
+			case "delete":
+				try {
+					let response = await fetch(url, { method: method} );
+					//console.log(response)
+					location.reload();
+				} catch(err) {
+					alert(err);
+				}
+				break;
+
+			case "put":
+
+				var inputs = document.querySelectorAll(".updateInput")
+				var json_arr = {};
+				for(let i=0; i<inputs.length; i++){
+					json_arr[inputs[i].name] = inputs[i].value;
+				}
+				var json_string = JSON.stringify(json_arr);
+				//console.log(json_string);
+				
+				try {
+					let response = await fetch(url, { method: method, body:json_string, headers: {"Content-Type": "application/json"}} );
+					//console.log(response)
+					changeSelected(0);
+				} catch(err) {
+					alert(err);
+				}
+				break;
+				
+			default:
+				console.log("default");
+		}
+		
+	}
+
+	async function changeSelected(primaries){
+		
+		category = window.location.pathname.split("/").pop();
+		let url = "/articles/"+category+"/changeSel/"+primaries;
+		try {
+			let response = await fetch(url);
+			location.reload();
+		} catch(err) {
+			alert(err);
+		}
+		
+	}
+
+</script>
+
+<main>
+	<select id="selectCategory" class="form-select form-select-lg mb-3" aria-label=".form-select-lg example" onchange="changeArticle(this.value)">
+		<option value="">Select Category... </option>
+		<% tables.forEach(function(table){ %>
+			<option value="<%= Object.values(table) %>"><%= Object.values(table) %></option>
+		<% }) %>
+	</select>
+
+	<div id="Category" class="container-fluid">
+		
+		<% if(itemList.length > 0) { %>
+			<div className="table-responsive" style=" max-height: 350px;
+													  min-height: 350px;
+													  max-width: auto;
+													  min-width: auto;
+													  overflow: auto;">
+				<%= primaryKeys %>
+				<table class="table table-striped text-center">
+					<thead>			
+					<tr>
+						<% var keys = Object.keys(itemList[0]) %>
+						<% keys.forEach(function(key) { %>
+							<th class="text-primary"><%= key.toUpperCase() %></th>
+						<% }) %>
+					</tr>
+					</thead>
+					<tbody>
+			
+					
+					
+					<% itemList.forEach(function(item) { %>
+						<% var keys = Object.keys(item) %>
+						<% var id = '' %>
+						<% primaryKeys.forEach(function(pk){ %>
+							<% 	if(typeof item[pk] === 'string' || item[pk]  instanceof String) { %>
+							<%		item[pk] = "\""+item[pk]+"\"" } %>
+							<% 	id += item[pk]+'&' %>
+						<% }) %>
+						<% id = id.slice(0,-1) %>
+
+						<% if(selected == id){ %>
+							<tr class="updateForm" id=<%= id %> >
+								<% keys.forEach(function(key) { %>
+									<td><input class="updateInput" type="text" name="<%= key %>" placeholder="<%= key %>" value="<%= item[key] %>"></input></td>
+								<% }) %>
+								<td class="fixedTr"><button style="background-color: aqua;" onclick= "fetchGeneral(<%= JSON.stringify(id) %>, 'put')" >UPDATE</button</td>
+								<td class="fixedTr2"><button onclick= "changeSelected(0)" >Cancel</button</td>
+							</tr>
+						<% } else{ %>  
+							<tr id=<%= id %> >
+								<% keys.forEach(function(key) { %>
+									<td><%= item[key] %></td>
+								<% }) %>
+								<td class="fixedTr"><button  style="background-color: orange;" onclick= "fetchGeneral(<%= JSON.stringify(id) %>, 'delete')" >DELETE</button</td>
+								<td class="fixedTr2"><button  onclick= "changeSelected(<%= JSON.stringify(id) %>)" >Edit</button</td>
+							</tr>
+						<% } %>	 
+						
+					<% }); %>
+					</tbody>
+			
+				</table>
+			</div>
+			<div class="crud-forms">
+				<form class="getAllForm my-4 p-3 border border-primary" action="#">
+					<div>
+					<input type="submit" value="GET ALL"></input>
+					</div>
+				</form>
+				<form class="postForm form-row my-4 p-3 border border-primary" action="#" method="POST">
+					<% itemKeys.slice(1).forEach(function(key) { %>
+						<span class="col"><input type="text" class="form-control" name="<%= key.name %>" placeholder="<%= key.name %>"></input></span>
+					<% }) %>
+					<span><input type="submit" class="form-control" value="POST"></input></span>
+				</form>
+				<form class="getPropForm form-row my-4 p-3 border border-primary" action="#" method="GET">
+					<div class="col">
+						<% itemKeys.forEach(function(key) { %>
+							<div class="form-check">
+								<input type="radio" class="form-check-input" id="<%= key.name %> " name="optradio" value="<%= key.name %>" > <%= key.name %> 
+								<label class="form-check-label" for="<%= key.name %> "></label>
+							</div>
+						<% }) %>
+					</div>
+					<div class="col"><input type="text" class="form-control" name="value" placeholder="value"></input></div>
+					<div><input type="submit" class="form-control" value="GET By Prop Value"></input></div>
+				</form>
+			</div>
+		<% } %>
+</main>
+
+<footer>
+  <%- include('../partials/footer'); %>
+</footer>
+
+</body>
+</html>
